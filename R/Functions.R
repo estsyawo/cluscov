@@ -1,3 +1,69 @@
+#===============================================================================#
+
+# You can learn more about package authoring with RStudio at:
+#
+#   http://r-pkgs.had.co.nz/
+#
+# Some useful keyboard shortcuts for package authoring:
+#
+#   Build and Reload Package:  'Cmd + Shift + B'
+#   Check Package:             'Cmd + Shift + E'
+#   Test Package:              'Cmd + Shift + T'
+
+#===============================================================================#
+# Notes :
+# when Eror in FUN(X[[i]],...) : shows, run devtools::load_all(".")
+#
+# 1. use the current R Development Version (that will eventually become 3.4)
+# 2. Run the tools::package_native_routine_registration_skeleton(".") and copy and
+#    paste the full output in a packagename_init.c file to be put in src/
+# 3. update NAMESPACE, verifying that useDynLib(packagename, .registration = TRUE)
+# 4. If necessary, replace the exportPattern with export( list of object to be exported )
+#===============================================================================#
+
+#' Linear regression via coordinate descent with covariate clustering
+#'
+#' Covariate assignment to k clusters. The es
+#'
+#' @param Y vector of outcome variable
+#' @param X matrix of covariates
+#' @param k number of clusters
+#' @param coefs vector of coefficients as starting values
+#' @param clus vector of covariate cluster assignments as starting values
+#' @param clusmns vector k cluster parameter centers
+#' @param nC first nC-1 covariates in X not to cluster. Must be at least 1 for the intercept
+#' @return clus cluster assignments
+#' @return coefs vector of coefficients as starting values
+#' @return clusmns vector of cluster means
+#'
+#'
+#' @examples
+#' set.seed(14) #Generate data
+#' N = 1000; (bets = rep(-2:2,4)); p = length(bets); X = matrix(rnorm(N*p),N,p)
+#' Y = cbind(1,X)%*%matrix(c(0.5,bets),ncol = 1)
+#' begin_v<- rep(NA,p)
+#' for (j in 1:p) {
+#'  begin_v[j] = coef(lm(Y~X[,j]))[2]
+#' }
+#' set.seed(12); klus_obj<- kmeans(begin_v,centers = 5)
+#' linrclus(Y,cbind(1,X),k=5,coefs=c(0,begin_v),clus=klus_obj$cluster,clusmns=klus_obj$centers)
+
+
+#' @useDynLib cluscov linreg_coord_clus
+#' @export
+
+linrclus<- function(Y,X,k,coefs,clus,clusmns,nC=1){
+  X = cbind(1,X)
+  nrX = as.integer(nrow(X)); ncX = as.integer(ncol(X)); k = as.integer(k)
+  Xdot = apply(X, 2, function(x)sum(x^2)); clus=as.integer(c(clus-1)); nC=as.integer(nC)
+  ans=.C("linreg_coord_clus",as.double(Y),as.double(X),coefs=as.double(coefs),clus=as.integer(clus),
+         klus=as.integer(c(0,clus)),double(nrX),as.double(Xdot),clusmns=as.double(clusmns),
+         nrX,ncX,k,nC,PACKAGE = "cluscov")
+  list(clus=(ans$clus+1),coefs=ans$coefs,clusmns=ans$clusmns)
+}
+
+
+
 #===================================================================================>
 #' Integer Golden Search Minimisation
 #'
@@ -316,7 +382,7 @@ CCRls<- function(Y,X,kap=0.1,model="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=
 }
 
 #=============================================================================================>
-#'
+
 clfun2<- function(Y,X,Xnc=NULL,clus,k,model=model,...){
   nrX <- nrow(X) #number of rows of X
   uniClus <- unique(clus)

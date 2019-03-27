@@ -46,7 +46,7 @@
 #'  begin_v[j] = coef(lm(Y~X[,j]))[2]
 #' }
 #' set.seed(12); klus_obj<- kmeans(begin_v,centers = 5)
-#' linrclus(Y,cbind(1,X),k=5,coefs=c(0,begin_v),clus=klus_obj$cluster,clusmns=klus_obj$centers)
+#' linrclus(Y,X,k=5,coefs=c(0,begin_v),clus=klus_obj$cluster,clusmns=klus_obj$centers)
 
 
 #' @useDynLib cluscov linreg_coord_clus

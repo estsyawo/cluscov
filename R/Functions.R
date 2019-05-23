@@ -23,15 +23,16 @@
 
 #' Linear regression via coordinate descent with covariate clustering
 #'
-#' Covariate assignment to k clusters. The es
+#' Covariate assignment to k clusters using the coordinate descent algorithm.
 #'
 #' @param Y vector of outcome variable
-#' @param X matrix of covariates
+#' @param X matrix of covariates. Should not include 1's for the intercept
 #' @param k number of clusters
-#' @param coefs vector of coefficients as starting values
+#' @param coefs vector of coefficients as starting values. Should not include the intercept.
 #' @param clus vector of covariate cluster assignments as starting values
 #' @param clusmns vector k cluster parameter centers
 #' @param nC first nC-1 covariates in X not to cluster. Must be at least 1 for the intercept
+#' @param x a logical for returning the design matrix
 #' @return clus cluster assignments
 #' @return coefs vector of coefficients as starting values
 #' @return clusmns vector of cluster means
@@ -43,26 +44,71 @@
 #' Y = cbind(1,X)%*%matrix(c(0.5,bets),ncol = 1)
 #' begin_v<- rep(NA,p)
 #' for (j in 1:p) {
-#'  begin_v[j] = coef(lm(Y~X[,j]))[2]
+#'  begin_v[j] = stats::coef(lm(Y~X[,j]))[2]
 #' }
 #' set.seed(12); klus_obj<- kmeans(begin_v,centers = 5)
 #' linrclus(Y,X,k=5,coefs=c(0,begin_v),clus=klus_obj$cluster,clusmns=klus_obj$centers)
 
-
 #' @useDynLib cluscov linreg_coord_clus
 #' @export
 
-linrclus<- function(Y,X,k,coefs,clus,clusmns,nC=1){
+linrclus<- function(Y,X,k,coefs,clus,clusmns,nC=1,x=FALSE){
   X = cbind(1,X)
   nrX = as.integer(nrow(X)); ncX = as.integer(ncol(X)); k = as.integer(k)
   Xdot = apply(X, 2, function(x)sum(x^2)); clus=as.integer(c(clus-1)); nC=as.integer(nC)
-  ans=.C("linreg_coord_clus",as.double(Y),as.double(X),coefs=as.double(coefs),clus=as.integer(clus),
+  ans=.C("linreg_coord_clus",as.double(Y),Xm=as.double(X),coefs=as.double(coefs),clus=as.integer(clus),
          klus=as.integer(c(0,clus)),double(nrX),as.double(Xdot),clusmns=as.double(clusmns),
          nrX,ncX,k,nC,PACKAGE = "cluscov")
-  list(clus=(ans$clus+1),coefs=ans$coefs,clusmns=ans$clusmns)
+  if(!x){
+    rval<- list(clus=(ans$clus+1),coefs=ans$coefs,clusmns=ans$clusmns)
+  }else{
+  rval<- list(clus=(ans$clus+1),coefs=ans$coefs,clusmns=ans$clusmns,X=ans$Xm)
+  }
+  return(rval)
 }
 
+#=============================================================================================>
+#' Linear regression via coordinate descent with covariate clsutering
+#'
+#' This function is a wrapper for \code{linrclus}. It returns clustered parameters with
+#' function values like residual sum of squares, and the criterion of choice (BIC, AIC)
+#'
+#' @param Y vector of outcome variable
+#' @param X matrix of covariates. Should not include 1's for the intercept
+#' @param k number of clusters
+#' @param nC first nC-1 covariates in X not to cluster. Must be at least 1 for the intercept
+#' @param ... additional parameters to be passed to \link[stats]{lm}
+#'
+#' @return \code{betas}  parameter estimates (intercept first),
+#' @return \code{iter}  number of iterations,
+#' @return \code{dev}  increment in the objective function value at convergence
+#' @return \code{fval} objective function value at convergence
+#'
+#' @examples ##Not run:
+#' @export
+CCRls.coord<- function(Y,X,k,nC,...){
+  p = ncol(X); n = nrow(X)
+  bet_vec<- rep(NA,p) # vector to store parameters, excludes intercept
+  # initialise parameters
+  for (j in 1:p) {
+    coefs<- stats::coef(stats::lm.fit(X[,j],Y,...))
+    bet_vec[j]<- coefs[2]
+  }
+  clus=dcluspar(k,bet_vec)
+  uniclus<- unique(clus)
+  clusmns<- rep(NA,k)
+  for (j in 1:k) {clusmns[j]<-mean(bet_vec[clus==uniclus[j]])  }
 
+  ans=linrclus(Y,X,k,c(0,bet_vec),clus,clusmns,nC,x=TRUE)
+
+  list(clus=ans$clus,coefs=ans$coefs,clusmns=ans$clusmns,Xm=ans$X)
+
+  X1 <- matrix(NA,n,k); Xnc=ans$Xm[,(1:nC)]; Xc = ans$Xm[,-(1:nC)]
+
+  for(j in k){ X1[,j] <- apply(as.matrix(Xc[,(which(clus == j))]),1,sum)}
+  model1 <- stats::lm(Y,cbind(Xnc,X1),...)
+  model1
+}
 
 #===================================================================================>
 #' Integer Golden Search Minimisation
@@ -157,49 +203,204 @@ goldopt<- function(fn,interval,tol=1){
   res=list(k=optx,crit=min(fd,fc),iter=l,iterfn=cnt,fobj=fobj,key=key)
   return(res)
 }
-#===================================================================================>
-#' Choice of model
+#=============================================================================================>
+#' Model criterion function
 #'
-#' This function is used to choose th appropriate model
+#' A generic S3 function as wrapper for internal R routines for classes of models implemented
+#' in this package. See details \link{c_chmod} for the list of classes supported.
 #'
-#' @param  Y the dependent or response variable
-#' @param  X design matrix (without intercept)
-#' @param  model a string for the desire model name. The following are supported
-#'           "lm", "logit", "probit", "gammainverse", "gammaidentity", "gammalog",
-#'           "poissonlog", "poissonsqrt", "negbin", "quantreg"
-#' @param  ... additional model arguments
+#' @param object the object to be passed to the concrete class constructor \code{chmod}
+#' @param ... additional paramters to be passed to the internal routine
 #'
-#' @return mobj fitted model object
-#'
-#' @examples
-#' ## Not run: summary(ch.model(cars$speed,cars$dist,"gammaidentity"))
 #' @export
 
-ch.model<- function(Y,X,model="lm",...){
-  if(model=="lm"){
-    mobj<- stats::glm(Y~.,family = gaussian(link = "identity"),data = data.frame(Y,X),...)
-  }else if(model=="logit"){
-    mobj<- stats::glm(Y~.,family = binomial(link = "logit"),data = data.frame(Y,X),...)
-  }else if(model=="quantreg"){
-    mobj<- quantreg::rq(Y~.,data = data.frame(Y,X),...)
-  }else if(model=="probit"){
-    mobj<- stats::glm(Y~.,family = binomial(link = "probit"),data = data.frame(Y,X),...)
-  }else if(model=="gammainverse"){
-    mobj<- stats::glm(Y~.,family = Gamma(link = "inverse"),data = data.frame(Y,X),...)
-  }else if(model=="gammaidentity"){
-    mobj<- stats::glm(Y~.,family = Gamma(link = "identity"),data = data.frame(Y,X),...)
-  }else if(model=="gammalog"){
-    mobj<- stats::glm(Y~.,family = Gamma(link = "log"),data = data.frame(Y,X),...)
-  }else if(model=="poissonlog"){
-    mobj<- stats::glm(Y~.,family = poisson(link = "log"),data = data.frame(Y,X),...)
-  }else if(model=="poissonidentity"){
-    mobj<- stats::glm(Y~.,family = poisson(link = "identity"),data = data.frame(Y,X),...)
-  }else if(model=="poissonsqrt"){
-    mobj<- stats::glm(Y~.,family = poisson(link = "sqrt"),data = data.frame(Y,X),...)
-  }else if(model=="negbin"){
-    mobj<- MASS::glm.nb(Y~.,data = data.frame(Y,X),...)
-  }
-  return(mobj)
+chmod<- function(object,...) UseMethod("chmod")
+
+##==================================================================================================>
+#' Concrete class constructor
+#'
+#' A function for constructing functions for concrete classes of models for the \code{chmod()} family of
+#'  of functions.
+#'
+#' @param Y vector of the outcome variable
+#' @param X matrix of covariates; excepting intercepts 1's
+#'
+#' @param modclass the class of model. Currently, "lm" for linear regression, "logit" (logit model),
+#' "qreg" (quantile regression), "probit" (probit model), "gammainverse" (gamma with inverse link),
+#' "gammalog" (gamma with log link), "poissonlog" (poisson model with log link),
+#' "poissonidentity" (poisson with identity link), "poissonsqrt" (poisson with sqrt link),
+#' "negbin" (negative binomial) are supported.
+#'
+#' @return object an object list with class attribute modclass.
+#'
+#' @export
+
+c_chmod<- function(Y, X, modclass="lm"){ #assign class of object
+    object<- list(Y,X)
+    class(object)<- modclass
+    names(object)<- c("Y","X")
+  object
+}
+
+#=============================================================================================>
+#' Regression - lmcd class
+#'
+#' A linear regression implementation for the "lmcd" class. It uses \code{\link[stats]{lm}}
+#'
+#' @param object a list of Y - outcome variable and Xmat - design matrix of class "lmcd"
+#' @param ... additional parameters to be passed to \code{\link[stats]{lm}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.lm<- function(object,...){
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
+  stats::lm(object$Y~.,data = dat,...)
+}
+
+#=============================================================================================>
+#' Regression - logit class
+#'
+#' A logit regression implementation for the "logitcd" class. It uses \code{\link[stats]{glm}}
+#'
+#' @param object a list of Y - outcome variable and Xmat - design matrix of class "logitcd"
+#' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.logit<- function(object,...){
+  fam = stats::binomial(link = "logit")
+  dat = data.frame(object$Y,object$Xmat); names(dat)[1]="Y"
+  stats::glm(object$Y~.,family = fam, data = dat,...)
+}
+
+#=============================================================================================>
+#' Regression - qreg class
+#'
+#' A quantile regression implementation for the "qreg" class. It uses \code{\link[quantreg]{rq}}
+#'
+#' @param object a list of Y - outcome variable and Xmat - design matrix of class "qreg"
+#' @param ... additional parameters to be passed to \code{\link[quantreg]{rq}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.qreg<- function(object,...){
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
+  quantreg::rq(object$Y~.,data = dat,...)
+}
+#=============================================================================================>
+#' Regression - probit class
+#'
+#' A probit regression implementation for the "probit" class. It uses \code{\link[stats]{glm}}
+#'
+#' @param object a list of Y - outcome variable and Xmat - design matrix of class "probitcd"
+#' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.probit<- function(object,...){
+  fam = stats::binomial(link = "probit")
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
+  stats::glm(object$Y~.,family = fam, data = dat,...)
+}
+#=============================================================================================>
+#' Regression - gammainverse class
+#'
+#' A gamma regression implementation for the "gammainverse" class. It uses \code{\link[stats]{glm}}
+#'
+#' @param object a list of Y - outcome variable and X - design matrix of class "probitcd"
+#' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.gammainverse<- function(object,...){
+  fam = stats::Gamma(link = "inverse")
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
+  stats::glm(object$Y~.,family = fam, data = dat,...)
+}
+#=============================================================================================>
+#' Regression - gammalog class
+#'
+#' A gamma regression implementation for the "gammalog" class. It uses \code{\link[stats]{glm}}
+#'
+#' @param object a list of Y - outcome variable and X - design matrix of class "probitcd"
+#' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.gammalog<- function(object,...){
+  fam = stats::Gamma(link = "log")
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
+  stats::glm(object$Y~.,family = fam, data = dat,...)
+}
+#=============================================================================================>
+#' Regression - poissonlog class
+#'
+#' A poisson regression implementation for the "poissonlog" class. It uses \code{\link[stats]{glm}}
+#'
+#' @param object a list of Y - outcome variable and X - design matrix of class "poissonlog"
+#' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.poissonlog<- function(object,...){
+  fam = stats::poisson(link = "log")
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
+  stats::glm(Y~.,family = fam,data = dat,...)
+}
+#=============================================================================================>
+#' Regression - poissonidentity class
+#'
+#' A poisson regression implementation for the "poissonidentity" class. It uses \code{\link[stats]{glm}}
+#'
+#' @param object a list of Y - outcome variable and X - design matrix of class "poissonidentity"
+#' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.poissonidentity<- function(object,...){
+  fam = stats::poisson(link = "identity")
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
+  stats::glm(Y~.,family = fam,data = dat,...)
+}
+#=============================================================================================>
+#' Regression - poissonsqrt class
+#'
+#' A poisson regression implementation for the "poissonsqrt" class. It uses \code{\link[stats]{glm}}
+#'
+#' @param object a list of Y - outcome variable and X - design matrix of class "poissonsqrt"
+#' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.poissonsqrt<- function(object,...){
+  fam = stats::poisson(link = "sqrt")
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
+  stats::glm(Y~.,family = fam,data = dat,...)
+}
+
+#=============================================================================================>
+#' Regression - negbin class
+#'
+#' A negative binomial regression implementation for the "negbin" class. It uses \code{\link[MASS]{glm.nb}}
+#'
+#' @param object a list of Y - outcome variable and X - design matrix of class "negbin"
+#' @param ... additional parameters to be passed to \code{\link[MASS]{glm.nb}}
+#'
+#' @return fitted model object
+#' @export
+
+chmod.negbin<- function(object,...){
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
+  MASS::glm.nb(object$Y~.,data = dat,...,maxit = 75)
 }
 
 #===================================================================================>
@@ -292,8 +493,8 @@ netdat<- function(datf,Y,X,Wi,W=NULL,panvar,tvar,factors,scaling=TRUE,unicons=TR
 #'
 #' @return clus  integer assignment of corresponding elements in vec in up to k clusters
 #' @examples
-#' ## Not run: set.seed(2); (v=c(rnorm(4,0,0.5),rnorm(3,3,0.5))[sample(1:7)])
-#' ## dcluspar(k=2,vec = v)
+#' set.seed(2); (v=c(rnorm(4,0,0.5),rnorm(3,3,0.5))[sample(1:7)])
+#' dcluspar(k=2,vec = v)
 #' @export
 #'
 dcluspar<- function(k,vec){
@@ -311,16 +512,16 @@ dcluspar<- function(k,vec){
   clus
 }
 #=============================================================================================>
-#' Regression via sequential optimisation
+#' Sequential CCR
 #'
 #' \code{CCRls} runs regressions with potentially more covariates than observations.
-#' See \code{ch.model()} for the list of models supported.
+#' See \code{c_chmod()} for the list of models supported.
 #'
 #' @param Y vector of dependent variable Y
 #' @param X design matrix (without intercept)
 #' @param kap maximum number of parameters to estimate in each active sequential step,
 #' as a fraction of the less of total number of observations n or number of covariates p.
-#' @param model a string denoting the desired model
+#' @param modclass a string denoting the desired the class of model. See \link{c_chmod} for details.
 #' @param tol level of tolerance for convergence; default \code{tol=1e-06}
 #' @param reltol a logical for relative tolerance instead of level. Defaults at TRUE
 #' @param rndcov seed for randomising assignment of covariates to partitions; default \code{NULL}
@@ -334,21 +535,21 @@ dcluspar<- function(k,vec){
 #'
 #' @examples ##Not run:
 #' @export
-## list(betas=c(bet0,bet_vec),iter=l,dev=dev,fval=val0)
-CCRls<- function(Y,X,kap=0.1,model="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=NULL,...){
+CCRls<- function(Y,X,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=NULL,...){
   p = ncol(X)
   n = nrow(X)
   bet_vec<- rep(NA,p) # vector to store parameters, excludes intercept
   asz = 1e-20
-  slc<- floor(kap*min(c(n,p))) # maximum size of a local covariate cluster
-  lcls<- ceiling((1:p)/slc) # partition covariates into clusters
-  nlcls<- max(lcls) #number of local clusters of covariates
+  slc<- floor(kap*min(c(n,p))) # maximum size of a local covariate partition
+  lcls<- ceiling((1:p)/slc) # assign covariates to partitions
+  nlcls<- max(lcls) #number of partitions of covariates
   if(!is.null(rndcov)){set.seed(rndcov);lcls<- sample(lcls,p)}
 
   # initialise parameters
   bet0<- 0 #initialise intercept
   for (j in 1:p) {
-    coefs<- coef(ch.model(Y,X[,j],model = model,...))
+    #coefs<- coef(ch.model(Y,X[,j],model = model,...))
+    coefs<- stats::coef(chmod(object=c_chmod(Y, X[,j], modclass=modclass),...))
     bet_vec[j]<- coefs[2]
   }
 
@@ -357,10 +558,10 @@ CCRls<- function(Y,X,kap=0.1,model="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=
   while((dev>tol)){
     if(l>0){
       val0<- val1; obj0<- obj1;
-      coefs<- coef(obj1)
+      coefs<- stats::coef(obj1)
       bet_vec[IDls]<- coefs[c(2:(1+nIDls))] # local parameter updating
       bet0<- coefs[1]                       # local parameter updating, intercept
-      bet_vec[-IDls]<- tail(coefs,n=1)*bet_vec[-IDls] #non-local parameter updating
+      bet_vec[-IDls]<- utils::tail(coefs,n=1)*bet_vec[-IDls] #non-local parameter updating
     }
 
     l<- l + 1; IND<- l - (ceiling(l/nlcls)-1)*nlcls;
@@ -370,51 +571,69 @@ CCRls<- function(Y,X,kap=0.1,model="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=
     XB_ = X[,-IDls]%*%matrix(bet_vec[-IDls],ncol = 1)
     Xl = X[,IDls]
     XX = data.frame(Xl,XB_)
-    obj1 = ch.model(Y,as.matrix(XX),model = model,...)
-    val1<- -logLik(obj1)
+    #obj1 = ch.model(Y,as.matrix(XX),model = model,...)
+    obj1 = chmod(object=c_chmod(Y, as.matrix(XX), modclass=modclass),...)
+    val1<- -stats::logLik(obj1)
     if(!is.null(report)){if(l%%report==0){ cat("Iter =",l,"fval =",val1,"\n")}}
     if(reltol){dev=(val0-val1)/(asz+abs(val0))}else{dev=(val0-val1)}
-    if(l==1){dev=1}
-    # 1 in denominator to avoid dividing by zero
+    if(l==1){dev=1} # asz in denominator to avoid dividing by zero
   }
-
   list(betas=c(bet0,bet_vec),iter=l,dev=dev,fval=val0)
 }
 
 #=============================================================================================>
-
-clfun2<- function(Y,X,Xnc=NULL,clus,k,model=model,...){
+#' CCR at k
+#'
+#' Run lower-dimension regression given CCR objects \code{clus} and a specified \code{k}
+#'
+#' @param Y vector of dependent variable Y
+#' @param X CCR design matrix (without intercept) and covariates not clustered
+#' @param Xnc matrix of covariates left out of CCR's clustering; defaults to \code{NULL} if all
+#' covariates, except the intercept, are clustered.
+#' @param clus vector of cluster assignments; must comprise positive integers only. Its sorted
+#' unique values should number from 1 to k
+#' @param k number of clusters - this is also the length of  \eqn{\delta}
+#' @param modclass class of model for CCR estimation - see \link{c_chmod} for details.
+#' @param ... additonal parameters to be passed to the model, eg. tau for quantile regression.
+#'
+#' @return model object; may be glm, lm, or rq class of model depending on \code{modclass} chosen
+#' @export
+#'
+clfun2<- function(Y,X,Xnc=NULL,clus,k,modclass="lm",...){
   nrX <- nrow(X) #number of rows of X
   uniClus <- unique(clus)
   X1 <- matrix(NA,nrX,k)
   for(j in uniClus) X1[,j] <- apply(as.matrix(X[,(which(clus == j))]),1,sum)
   if(is.null(Xnc)){
-    model1 <-ch.model(Y,X1,model = model,...)
+    #model1 <-ch.model(Y,X1,model = model,...)
+    model1 = chmod(object=c_chmod(Y, X1, modclass=modclass),...)
   }else{
-    model1 <-ch.model(Y,as.matrix(cbind(Xnc,X1)),model = model,...)
+    #model1 <-ch.model(Y,as.matrix(cbind(Xnc,X1)),model = model,...)
+    model1 = chmod(object=c_chmod(Y, as.matrix(cbind(Xnc,X1)), modclass=modclass),...)
   }
   model1
 }
 
-# Next step: build a clustered covariate estimation procedure
-# compute BIC at a given k clustering
-CCRk<- function(k,betas,Y,X,model="lm",...){
-  clus<- dcluspar(k,betas)
-  regobj<- clfun2(Y,X,clus,k,model=model,...)
-  stats::BIC(regobj)
-}
+#=============================================================================================>
+#' Golden Section Search Algorithm
+#'
+#' Minimising a continuous univariate function using the golden section search algorithm.
+#'
+#' @param fn the function; should be scalar valued
+#' @param interval a vector containing the lower and upper bounds of search
+#' @param tol tolerance level for convergence
+#'
+#' @return a list of objects ## list(k=optx,value=min(fd,fc),iter=l,iterfn=cnt)
+#' \itemize{
+#' \item k: minimiser
+#' \item value: mimimum value
+#' \item iter: number of iterations before convergence
+#' \item iterfn: number of function evaluations
+#'}
+#' @examples
+#' fn = function(x) (x-1)^2; goldensearch(fn=fn,interval=c(-2,3),tol=1)
+#' @export
 
-# regression object and clustering at a given number of clusters k
-CCRk2<- function(k,betas,Y,X,Xnc=NULL,model="lm",...){
-  clus<- dcluspar(k,betas)
-  regobj<- clfun2(Y,X,Xnc=Xnc,clus,k,model=model,...)
-  list(BIC=stats::BIC(regobj),regobj=regobj,clus=clus)
-}
-
-
-
-
-# Golden Search Algorithm for the outer loop ()
 goldensearch<- function(fn,interval,tol=1){
   a=min(interval); b = max(interval)
   xvals<- c(0); xvals[1]<- a; xvals[2]<- b

@@ -3,11 +3,11 @@ Type: Package
 Title: Clustered covariate regression
 Version: 0.1.0
 Date: 2018-12-1
-Author: Abdul-Nasah Soale & Emmanuel S Tsyawo
+Author: Emmanuel S Tsyawo & Abdul-Nasah Soale
 Maintainer: Emmanuel S. Tsyawo <estsyaw@temple.edu>
-Description: Clustered covariate regression enables estimation and inference in both linear and non-linear models with linear prediction functions. 
+Description: Clustered covariate regression enables estimation and inference in both linear and non-linear models with linear predictor functions. 
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
-Imports: quantreg, MASS, stats
+Imports: quantreg, MASS, stats, utils
 RoxygenNote: 6.1.1

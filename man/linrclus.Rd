@@ -2,24 +2,26 @@
 % Please edit documentation in R/Functions.R
 \name{linrclus}
 \alias{linrclus}
-\title{Linear regression with Conjugate Gradient Solver}
+\title{Linear regression via coordinate descent with covariate clustering}
 \usage{
-linrclus(Y, X, k, coefs, clus, clusmns, nC = 1)
+linrclus(Y, X, k, coefs, clus, clusmns, nC = 1, x = FALSE)
 }
 \arguments{
 \item{Y}{vector of outcome variable}
 
-\item{X}{matrix of covariates}
+\item{X}{matrix of covariates. Should not include 1's for the intercept}
 
 \item{k}{number of clusters}
 
-\item{coefs}{vector of coefficients as starting values}
+\item{coefs}{vector of coefficients as starting values. Should not include the intercept.}
 
 \item{clus}{vector of covariate cluster assignments as starting values}
 
 \item{clusmns}{vector k cluster parameter centers}
 
 \item{nC}{first nC-1 covariates in X not to cluster. Must be at least 1 for the intercept}
+
+\item{x}{a logical for returning the design matrix}
 }
 \value{
 clus cluster assignments
@@ -29,9 +31,7 @@ coefs vector of coefficients as starting values
 clusmns vector of cluster means
 }
 \description{
-This function implements linear regression by solving the normal equations. It
-constructs matrices X'X and X'Y and solves for beta in X'X*beta=X'Y
-using the iterative Conjugate Gradient solver of system of linear equations.
+Covariate assignment to k clusters using the coordinate descent algorithm.
 }
 \examples{
 set.seed(14) #Generate data
@@ -39,8 +39,8 @@ N = 1000; (bets = rep(-2:2,4)); p = length(bets); X = matrix(rnorm(N*p),N,p)
 Y = cbind(1,X)\%*\%matrix(c(0.5,bets),ncol = 1)
 begin_v<- rep(NA,p)
 for (j in 1:p) {
- begin_v[j] = coef(lm(Y~X[,j]))[2]
+ begin_v[j] = stats::coef(lm(Y~X[,j]))[2]
 }
 set.seed(12); klus_obj<- kmeans(begin_v,centers = 5)
-linrclus(Y,cbind(1,X),k=5,coefs=c(0,begin_v),clus=klus_obj$cluster,clusmns=klus_obj$centers)
+linrclus(Y,X,k=5,coefs=c(0,begin_v),clus=klus_obj$cluster,clusmns=klus_obj$centers)
 }

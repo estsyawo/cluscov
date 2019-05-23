@@ -2,9 +2,9 @@
 % Please edit documentation in R/Functions.R
 \name{CCRls}
 \alias{CCRls}
-\title{Regression via sequential optimisation}
+\title{Sequential CCR}
 \usage{
-CCRls(Y, X, kap = 0.1, model = "lm", tol = 1e-06, reltol = TRUE,
+CCRls(Y, X, kap = 0.1, modclass = "lm", tol = 1e-06, reltol = TRUE,
   rndcov = NULL, report = NULL, ...)
 }
 \arguments{
@@ -15,7 +15,7 @@ CCRls(Y, X, kap = 0.1, model = "lm", tol = 1e-06, reltol = TRUE,
 \item{kap}{maximum number of parameters to estimate in each active sequential step,
 as a fraction of the less of total number of observations n or number of covariates p.}
 
-\item{model}{a string denoting the desired model}
+\item{modclass}{a string denoting the desired the class of model. See \link{c_chmod} for details.}
 
 \item{tol}{level of tolerance for convergence; default \code{tol=1e-06}}
 
@@ -38,7 +38,7 @@ as a fraction of the less of total number of observations n or number of covaria
 }
 \description{
 \code{CCRls} runs regressions with potentially more covariates than observations.
-See \code{ch.model()} for the list of models supported.
+See \code{c_chmod()} for the list of models supported.
 }
 \examples{
 ##Not run:

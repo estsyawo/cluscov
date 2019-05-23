@@ -18,6 +18,6 @@ clus  integer assignment of corresponding elements in vec in up to k clusters
 A deterministic clustering device of vector elements into k clusters
 }
 \examples{
-## Not run: set.seed(2); (v=c(rnorm(4,0,0.5),rnorm(3,3,0.5))[sample(1:7)])
-## dcluspar(k=2,vec = v)
+set.seed(2); (v=c(rnorm(4,0,0.5),rnorm(3,3,0.5))[sample(1:7)])
+dcluspar(k=2,vec = v)
 }

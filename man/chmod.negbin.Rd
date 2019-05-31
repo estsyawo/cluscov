@@ -17,6 +17,3 @@ fitted model object
 \description{
 A negative binomial regression implementation for the "negbin" class. It uses \code{\link[MASS]{glm.nb}}
 }
-\examples{
-chmod(c_chmod(Y=women$weight,X=women$height,modclass="negbin"))
-}

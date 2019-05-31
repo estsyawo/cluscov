@@ -424,8 +424,7 @@ chmod.poissonsqrt<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[MASS]{glm.nb}}
 #'
 #' @return fitted model object
-#' @examples
-#' chmod(c_chmod(Y=women$weight,X=women$height,modclass="negbin"))
+#'
 #' @export
 
 chmod.negbin<- function(object,...){

@@ -7,9 +7,10 @@
 \method{chmod}{qreg}(object, ...)
 }
 \arguments{
-\item{object}{a list of Y - outcome variable and Xmat - design matrix of class "qreg"}
+\item{object}{a list of Y - outcome variable and X - design matrix of class "qreg"}
 
-\item{...}{additional parameters to be passed to \code{\link[quantreg]{rq}}}
+\item{...}{additional parameters to be passed to \code{\link[quantreg]{rq}}, for example
+\code{tau}}
 }
 \value{
 fitted model object

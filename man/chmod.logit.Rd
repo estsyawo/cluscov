@@ -7,7 +7,7 @@
 \method{chmod}{logit}(object, ...)
 }
 \arguments{
-\item{object}{a list of Y - outcome variable and Xmat - design matrix of class "logitcd"}
+\item{object}{a list of Y - outcome variable and X - design matrix of class "logit"}
 
 \item{...}{additional parameters to be passed to \code{\link[stats]{glm}}}
 }
@@ -15,7 +15,8 @@
 fitted model object
 }
 \description{
-A logit regression implementation for the "logitcd" class. It uses \code{\link[stats]{glm}}
+A logit regression implementation for the "logit" class. It uses \code{\link[stats]{glm}}
+with the binomial link function set to "logit"
 }
 \examples{
 chmod(c_chmod(Y=women$height<=50,X=women$weight,modclass="logit"))

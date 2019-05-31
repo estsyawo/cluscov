@@ -14,7 +14,7 @@ goldensearch(fn, interval, tol = 1)
 \item{tol}{tolerance level for convergence}
 }
 \value{
-a list of objects ## list(k=optx,value=min(fd,fc),iter=l,iterfn=cnt)
+a list of objects
 \itemize{
 \item k: minimiser
 \item value: mimimum value

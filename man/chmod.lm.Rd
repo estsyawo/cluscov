@@ -2,12 +2,12 @@
 % Please edit documentation in R/Functions.R
 \name{chmod.lm}
 \alias{chmod.lm}
-\title{Regression - lmcd class}
+\title{Regression - lm class}
 \usage{
 \method{chmod}{lm}(object, ...)
 }
 \arguments{
-\item{object}{a list of Y - outcome variable and Xmat - design matrix of class "lmcd"}
+\item{object}{a list of Y - outcome variable and X - design matrix of class "lm"}
 
 \item{...}{additional parameters to be passed to \code{\link[stats]{lm}}}
 }
@@ -15,7 +15,7 @@
 fitted model object
 }
 \description{
-A linear regression implementation for the "lmcd" class. It uses \code{\link[stats]{lm}}
+A linear regression implementation for the "lm" class. It uses \code{\link[stats]{lm}}
 }
 \examples{
 chmod(c_chmod(Y=women$height,X=women$weight,modclass="lm"))

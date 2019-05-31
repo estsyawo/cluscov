@@ -31,7 +31,8 @@ coefs vector of coefficients as starting values
 clusmns vector of cluster means
 }
 \description{
-Covariate assignment to k clusters using the coordinate descent algorithm.
+Covariate assignment to k clusters using the coordinate descent algorithm. This
+function is a wrapper for the \code{C} function \code{linreg_coord_clus}
 }
 \examples{
 set.seed(14) #Generate data

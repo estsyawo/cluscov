@@ -7,7 +7,7 @@
 \method{chmod}{probit}(object, ...)
 }
 \arguments{
-\item{object}{a list of Y - outcome variable and Xmat - design matrix of class "probitcd"}
+\item{object}{a list of Y - outcome variable and X - design matrix of class "probit"}
 
 \item{...}{additional parameters to be passed to \code{\link[stats]{glm}}}
 }
@@ -16,6 +16,7 @@ fitted model object
 }
 \description{
 A probit regression implementation for the "probit" class. It uses \code{\link[stats]{glm}}
+with the binomial link set to "probit"
 }
 \examples{
 chmod(c_chmod(Y=women$height<=50,X=women$weight,modclass="probit"))

@@ -2,10 +2,12 @@ Package: cluscov
 Type: Package
 Title: Clustered Covariate Regression
 Version: 0.1.0
-Date: 2018-12-1
-Author: Emmanuel S Tsyawo & Abdul-Nasah Soale
+Date: 2019-05-31
+Author: Emmanuel S Tsyawo  [aut, cre], Abdul-Nasah Soale [aut]
 Maintainer: Emmanuel S Tsyawo <estsyawo@temple.edu>
-Description: Clustered covariate regression enables estimation and inference in both linear and non-linear models with linear predictor functions. 
+Description: Clustered covariate regression enables estimation and inference in 
+ both linear and non-linear models with linear predictor functions even when the
+ design matrix is column rank deficient. 
 License: GPL-2
 Encoding: UTF-8
 LazyData: true

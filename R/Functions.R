@@ -23,7 +23,8 @@
 
 #' Linear regression via coordinate descent with covariate clustering
 #'
-#' Covariate assignment to k clusters using the coordinate descent algorithm.
+#' Covariate assignment to k clusters using the coordinate descent algorithm. This
+#' function is a wrapper for the \code{C} function \code{linreg_coord_clus}
 #'
 #' @param Y vector of outcome variable
 #' @param X matrix of covariates. Should not include 1's for the intercept
@@ -244,11 +245,11 @@ c_chmod<- function(Y, X, modclass="lm"){ #assign class of object
 }
 
 #=============================================================================================>
-#' Regression - lmcd class
+#' Regression - lm class
 #'
-#' A linear regression implementation for the "lmcd" class. It uses \code{\link[stats]{lm}}
+#' A linear regression implementation for the "lm" class. It uses \code{\link[stats]{lm}}
 #'
-#' @param object a list of Y - outcome variable and Xmat - design matrix of class "lmcd"
+#' @param object a list of Y - outcome variable and X - design matrix of class "lm"
 #' @param ... additional parameters to be passed to \code{\link[stats]{lm}}
 #'
 #' @return fitted model object
@@ -264,9 +265,10 @@ chmod.lm<- function(object,...){
 #=============================================================================================>
 #' Regression - logit class
 #'
-#' A logit regression implementation for the "logitcd" class. It uses \code{\link[stats]{glm}}
+#' A logit regression implementation for the "logit" class. It uses \code{\link[stats]{glm}}
+#' with the binomial link function set to "logit"
 #'
-#' @param object a list of Y - outcome variable and Xmat - design matrix of class "logitcd"
+#' @param object a list of Y - outcome variable and X - design matrix of class "logit"
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
@@ -285,8 +287,9 @@ chmod.logit<- function(object,...){
 #'
 #' A quantile regression implementation for the "qreg" class. It uses \code{\link[quantreg]{rq}}
 #'
-#' @param object a list of Y - outcome variable and Xmat - design matrix of class "qreg"
-#' @param ... additional parameters to be passed to \code{\link[quantreg]{rq}}
+#' @param object a list of Y - outcome variable and X - design matrix of class "qreg"
+#' @param ... additional parameters to be passed to \code{\link[quantreg]{rq}}, for example
+#' \code{tau}
 #'
 #' @return fitted model object
 #' @examples
@@ -301,8 +304,9 @@ chmod.qreg<- function(object,...){
 #' Regression - probit class
 #'
 #' A probit regression implementation for the "probit" class. It uses \code{\link[stats]{glm}}
+#' with the binomial link set to "probit"
 #'
-#' @param object a list of Y - outcome variable and Xmat - design matrix of class "probitcd"
+#' @param object a list of Y - outcome variable and X - design matrix of class "probit"
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
@@ -319,8 +323,9 @@ chmod.probit<- function(object,...){
 #' Regression - gammainverse class
 #'
 #' A gamma regression implementation for the "gammainverse" class. It uses \code{\link[stats]{glm}}
+#' with the Gamma link function set to "inverse"
 #'
-#' @param object a list of Y - outcome variable and X - design matrix of class "probitcd"
+#' @param object a list of Y - outcome variable and X - design matrix of class "probit"
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
@@ -337,8 +342,9 @@ chmod.gammainverse<- function(object,...){
 #' Regression - gammalog class
 #'
 #' A gamma regression implementation for the "gammalog" class. It uses \code{\link[stats]{glm}}
+#' with the Gamma link function set to "log"
 #'
-#' @param object a list of Y - outcome variable and X - design matrix of class "probitcd"
+#' @param object a list of Y - outcome variable and X - design matrix of class "probit"
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
@@ -355,6 +361,7 @@ chmod.gammalog<- function(object,...){
 #' Regression - poissonlog class
 #'
 #' A poisson regression implementation for the "poissonlog" class. It uses \code{\link[stats]{glm}}
+#' with the poisson link function set to "log"
 #'
 #' @param object a list of Y - outcome variable and X - design matrix of class "poissonlog"
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
@@ -373,6 +380,7 @@ chmod.poissonlog<- function(object,...){
 #' Regression - poissonidentity class
 #'
 #' A poisson regression implementation for the "poissonidentity" class. It uses \code{\link[stats]{glm}}
+#' with the poisson link function set to "identity"
 #'
 #' @param object a list of Y - outcome variable and X - design matrix of class "poissonidentity"
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
@@ -391,6 +399,7 @@ chmod.poissonidentity<- function(object,...){
 #' Regression - poissonsqrt class
 #'
 #' A poisson regression implementation for the "poissonsqrt" class. It uses \code{\link[stats]{glm}}
+#' with the poisson link function set to "sqrt"
 #'
 #' @param object a list of Y - outcome variable and X - design matrix of class "poissonsqrt"
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
@@ -416,7 +425,7 @@ chmod.poissonsqrt<- function(object,...){
 #'
 #' @return fitted model object
 #' @examples
-#' chmod(c_chmod(Y=women$height,X=women$weight,modclass="negbin"))
+#' chmod(c_chmod(Y=women$weight,X=women$height,modclass="negbin"))
 #' @export
 
 chmod.negbin<- function(object,...){
@@ -597,7 +606,6 @@ CCRls<- function(Y,X,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,repo
     XB_ = X[,-IDls]%*%matrix(bet_vec[-IDls],ncol = 1)
     Xl = X[,IDls]
     XX = data.frame(Xl,XB_)
-    #obj1 = ch.model(Y,as.matrix(XX),model = model,...)
     obj1 = chmod(object=c_chmod(Y, as.matrix(XX), modclass=modclass),...)
     val1<- -stats::logLik(obj1)
     if(!is.null(report)){if(l%%report==0){ cat("Iter =",l,"fval =",val1,"\n")}}
@@ -605,39 +613,6 @@ CCRls<- function(Y,X,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,repo
     if(l==1){dev=1} # asz in denominator to avoid dividing by zero
   }
   list(betas=c(bet0,bet_vec),iter=l,dev=dev,fval=val0)
-}
-
-#=============================================================================================>
-#' CCR at k
-#'
-#' Run lower-dimension regression given CCR objects \code{clus} and a specified \code{k}
-#'
-#' @param Y vector of dependent variable Y
-#' @param X CCR design matrix (without intercept) and covariates not clustered
-#' @param Xnc matrix of covariates left out of CCR's clustering; defaults to \code{NULL} if all
-#' covariates, except the intercept, are clustered.
-#' @param clus vector of cluster assignments; must comprise positive integers only. Its sorted
-#' unique values should number from 1 to k
-#' @param k number of clusters - this is also the length of  \eqn{\delta}
-#' @param modclass class of model for CCR estimation - see \link{c_chmod} for details.
-#' @param ... additonal parameters to be passed to the model, eg. tau for quantile regression.
-#'
-#' @return model object; may be glm, lm, or rq class of model depending on \code{modclass} chosen
-#' @export
-#'
-clfun2<- function(Y,X,Xnc=NULL,clus,k,modclass="lm",...){
-  nrX <- nrow(X) #number of rows of X
-  uniClus <- unique(clus)
-  X1 <- matrix(NA,nrX,k)
-  for(j in uniClus) X1[,j] <- apply(as.matrix(X[,(which(clus == j))]),1,sum)
-  if(is.null(Xnc)){
-    #model1 <-ch.model(Y,X1,model = model,...)
-    model1 = chmod(object=c_chmod(Y, X1, modclass=modclass),...)
-  }else{
-    #model1 <-ch.model(Y,as.matrix(cbind(Xnc,X1)),model = model,...)
-    model1 = chmod(object=c_chmod(Y, as.matrix(cbind(Xnc,X1)), modclass=modclass),...)
-  }
-  model1
 }
 
 #=============================================================================================>
@@ -649,7 +624,7 @@ clfun2<- function(Y,X,Xnc=NULL,clus,k,modclass="lm",...){
 #' @param interval a vector containing the lower and upper bounds of search
 #' @param tol tolerance level for convergence
 #'
-#' @return a list of objects ## list(k=optx,value=min(fd,fc),iter=l,iterfn=cnt)
+#' @return a list of objects
 #' \itemize{
 #' \item k: minimiser
 #' \item value: mimimum value

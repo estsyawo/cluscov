@@ -16,6 +16,7 @@ fitted model object
 }
 \description{
 A poisson regression implementation for the "poissonidentity" class. It uses \code{\link[stats]{glm}}
+with the poisson link function set to "identity"
 }
 \examples{
 chmod(c_chmod(Y=women$height,X=women$weight,modclass="poissonidentity"))

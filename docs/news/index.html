@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Regression - probit class — chmod.probit • cluscov</title>
+<title>Changelog • cluscov</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,11 +30,7 @@
 
 
 
-<meta property="og:title" content="Regression - probit class — chmod.probit" />
-
-<meta property="og:description" content="A probit regression implementation for the &quot;probit&quot; class. It uses glm
-with the binomial link set to &quot;probit&quot;" />
-<meta name="twitter:card" content="summary" />
+<meta property="og:title" content="Changelog" />
 
 
 
@@ -51,7 +47,7 @@ with the binomial link set to &quot;probit&quot;" />
   </head>
 
   <body>
-    <div class="container template-reference-topic">
+    <div class="container template-news">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -98,62 +94,28 @@ with the binomial link set to &quot;probit&quot;" />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Regression - probit class</h1>
-    
-    <div class="hidden name"><code>chmod.probit.Rd</code></div>
+      <h1>Changelog <small></small></h1>
+      
     </div>
 
-    <div class="ref-description">
-    
-    <p>A probit regression implementation for the "probit" class. It uses <code><a href='https://www.rdocumentation.org/packages/stats/topics/glm'>glm</a></code>
-with the binomial link set to "probit"</p>
-    
-    </div>
-
-    <pre class="usage"><span class='co'># S3 method for probit</span>
-<span class='fu'><a href='chmod.html'>chmod</a></span>(<span class='no'>object</span>, <span class='no'>...</span>)</pre>
-    
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
-    <table class="ref-arguments">
-    <colgroup><col class="name" /><col class="desc" /></colgroup>
-    <tr>
-      <th>object</th>
-      <td><p>a list of Y - outcome variable and X - design matrix of class "probit"</p></td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td><p>additional parameters to be passed to <code><a href='https://www.rdocumentation.org/packages/stats/topics/glm'>glm</a></code></p></td>
-    </tr>
-    </table>
-    
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
-
-    <p>fitted model object</p>
-    
-
-    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='chmod.html'>chmod</a></span>(<span class='fu'><a href='c_chmod.html'>c_chmod</a></span>(<span class='kw'>Y</span><span class='kw'>=</span><span class='no'>women</span>$<span class='no'>height</span><span class='kw'>&lt;=</span><span class='fl'>50</span>,<span class='kw'>X</span><span class='kw'>=</span><span class='no'>women</span>$<span class='no'>weight</span>,<span class='kw'>modclass</span><span class='kw'>=</span><span class='st'>"probit"</span>))</div><div class='output co'>#&gt; 
-#&gt; Call:  stats::glm(formula = object$Y ~ ., family = fam, data = dat)
-#&gt; 
-#&gt; Coefficients:
-#&gt; (Intercept)     object.X  
-#&gt;  -6.702e+00    3.219e-17  
-#&gt; 
-#&gt; Degrees of Freedom: 14 Total (i.e. Null);  13 Residual
-#&gt; Null Deviance:	    0 
-#&gt; Residual Deviance: 3.083e-10 	AIC: 4</div></pre>
+    <div id="cluscov-0-1-0" class="section level1">
+<h1 class="page-header">
+<a href="#cluscov-0-1-0" class="anchor"></a>cluscov 0.1.0</h1>
+<ul>
+<li>First version of cluscov for the paper “Clustered Covariate Regression” by Soale, Abdul-Nasah &amp; Emmanuel S. Tsyawo</li>
+</ul>
+</div>
   </div>
+
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#value">Value</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+    <div id="tocnav">
+      <h2>Contents</h2>
+      <ul class="nav nav-pills nav-stacked">
+        <li><a href="#cluscov-0-1-0">0.1.0</a></li>
+      </ul>
+    </div>
   </div>
+
 </div>
 
       <footer>

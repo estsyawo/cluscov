@@ -7,7 +7,7 @@
 \method{chmod}{gammalog}(object, ...)
 }
 \arguments{
-\item{object}{a list of Y - outcome variable and X - design matrix of class "probitcd"}
+\item{object}{a list of Y - outcome variable and X - design matrix of class "probit"}
 
 \item{...}{additional parameters to be passed to \code{\link[stats]{glm}}}
 }
@@ -16,6 +16,7 @@ fitted model object
 }
 \description{
 A gamma regression implementation for the "gammalog" class. It uses \code{\link[stats]{glm}}
+with the Gamma link function set to "log"
 }
 \examples{
 chmod(c_chmod(Y=women$height,X=women$weight,modclass="gammalog"))

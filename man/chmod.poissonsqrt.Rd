@@ -17,3 +17,6 @@ fitted model object
 \description{
 A poisson regression implementation for the "poissonsqrt" class. It uses \code{\link[stats]{glm}}
 }
+\examples{
+chmod(c_chmod(Y=women$height,X=women$weight,modclass="poissonsqrt"))
+}

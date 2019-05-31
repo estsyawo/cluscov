@@ -17,3 +17,6 @@ fitted model object
 \description{
 A logit regression implementation for the "logitcd" class. It uses \code{\link[stats]{glm}}
 }
+\examples{
+chmod(c_chmod(Y=women$height<=50,X=women$weight,modclass="logit"))
+}

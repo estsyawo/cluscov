@@ -62,16 +62,15 @@ linrclus<- function(Y,X,k,coefs,clus,clusmns,nC=1,x=FALSE){
   if(!x){
     rval<- list(clus=(ans$clus+1),coefs=ans$coefs,clusmns=ans$clusmns)
   }else{
-  rval<- list(clus=(ans$clus+1),coefs=ans$coefs,clusmns=ans$clusmns,X=ans$Xm)
+  rval<- list(clus=(ans$clus+1),coefs=ans$coefs,clusmns=ans$clusmns,X=matrix(ans$Xm,nrow = nrX))
   }
   return(rval)
 }
 
 #=============================================================================================>
-#' Linear regression via coordinate descent with covariate clsutering
+#' Linear regression via coordinate descent with covariate clustering
 #'
-#' This function is a wrapper for \code{linrclus}. It returns clustered parameters with
-#' function values like residual sum of squares, and the criterion of choice (BIC, AIC)
+#' This function is a wrapper for \code{linrclus}. It requires less input.
 #'
 #' @param Y vector of outcome variable
 #' @param X matrix of covariates. Should not include 1's for the intercept
@@ -79,35 +78,33 @@ linrclus<- function(Y,X,k,coefs,clus,clusmns,nC=1,x=FALSE){
 #' @param nC first nC-1 covariates in X not to cluster. Must be at least 1 for the intercept
 #' @param ... additional parameters to be passed to \link[stats]{lm}
 #'
-#' @return \code{betas}  parameter estimates (intercept first),
-#' @return \code{iter}  number of iterations,
-#' @return \code{dev}  increment in the objective function value at convergence
-#' @return \code{fval} objective function value at convergence
+#' @return \code{mobj}  the low dimension \link[stats]{lm} regression  object
+#' @return \code{clus}  cluster assignments of covariates (excluding the first nC
+#' covariates - including the intercept 1)
 #'
-#' @examples ##Not run:
+#' @examples
+#' set.seed(14) #Generate data
+#' N = 1000; (bets = rep(-2:2,4)); p = length(bets); X = matrix(rnorm(N*p),N,p)
+#' Y = cbind(1,X)%*%matrix(c(0.5,bets),ncol = 1)
+#' CCRls.coord(Y,X,k=5,nC=1)
 #' @export
-CCRls.coord<- function(Y,X,k,nC,...){
+CCRls.coord<- function(Y,X,k,nC=1,...){
   p = ncol(X); n = nrow(X)
   bet_vec<- rep(NA,p) # vector to store parameters, excludes intercept
   # initialise parameters
   for (j in 1:p) {
-    coefs<- stats::coef(stats::lm.fit(X[,j],Y,...))
+    coefs<- stats::coef(stats::lm.fit(as.matrix(cbind(1,X[,j])),Y,...))
     bet_vec[j]<- coefs[2]
   }
   clus=dcluspar(k,bet_vec)
   uniclus<- unique(clus)
   clusmns<- rep(NA,k)
-  for (j in 1:k) {clusmns[j]<-mean(bet_vec[clus==uniclus[j]])  }
-
+  for (j in 1:k) {clusmns[j]<-mean(bet_vec[clus==uniclus[j]]) }
   ans=linrclus(Y,X,k,c(0,bet_vec),clus,clusmns,nC,x=TRUE)
-
-  list(clus=ans$clus,coefs=ans$coefs,clusmns=ans$clusmns,Xm=ans$X)
-
-  X1 <- matrix(NA,n,k); Xnc=ans$Xm[,(1:nC)]; Xc = ans$Xm[,-(1:nC)]
-
-  for(j in k){ X1[,j] <- apply(as.matrix(Xc[,(which(clus == j))]),1,sum)}
-  model1 <- stats::lm(Y,cbind(Xnc,X1),...)
-  model1
+  X1 <- matrix(NA,n,k); Xnc=ans$X[,(1:nC)]; Xc = ans$X[,-c(1:nC)]
+  for(j in 1: k){ X1[,j] <- apply(as.matrix(Xc[,which(clus == j)]),1,sum)}
+  model1 <- stats::lm(Y~as.matrix(cbind(Xnc,X1)[,-1]),...)
+  list(mobj=model1,clus=clus)
 }
 
 #===================================================================================>
@@ -115,7 +112,8 @@ CCRls.coord<- function(Y,X,k,nC,...){
 #'
 #' This function conducts an integer golden search minimisation of a univariate function.
 #'
-#' @param fn  function to be minimised
+#' @param fn  function to be minimised. \strong{fn} should return a list, with \strong{fval}
+#' as the function value.
 #' @param interval a vector of length two containing the minimum and maximum interger
 #' values within which to search for the minimiser.
 #' @param  tol the tolerance level. Defaults at 1
@@ -128,15 +126,19 @@ CCRls.coord<- function(Y,X,k,nC,...){
 #' @return key a logical for warning if \code{fobj} may not correspond to \code{k}
 #'
 #' @examples
-#' ## Not run:...
+#' set.seed(14) #Generate data
+#' N = 1000; (bets = rep(-2:2,4)); p = length(bets); X = matrix(rnorm(N*p),N,p)
+#' Y = cbind(1,X)%*%matrix(c(0.5,bets),ncol = 1)
+#' fn=function(k){du=CCRls.coord(Y,X,k=k,nC=1)
+#' return(list(fval=BIC(du$mobj),obj=du))}
+#' goldopt(fn=fn,interval=c(2,7),tol=1)
 #' @export
 
-# Golden Search Algorithm for the outer loop ()
 goldopt<- function(fn,interval,tol=1){
   a=min(interval); b = max(interval); key=0
   xvals<- c(0); xvals[1]<- a; xvals[2]<- b
   fvals<- c(0)
-  faobj<-fn(a); fa = faobj$BIC; fbobj<-fn(b); fb = fbobj$BIC;
+  faobj<-fn(a); fa = faobj$fval; fbobj<-fn(b); fb = fbobj$fval;
   fvals[1]<- fa; fvals[2]<- fb
   cnt=2; # set counter to 2 for function evaluations
   phi<- (1+sqrt(5))/2
@@ -148,7 +150,7 @@ goldopt<- function(fn,interval,tol=1){
     key=1
   }else{
     cnt=cnt+1
-    fcobj<- fn(c); fc=fcobj$BIC
+    fcobj<- fn(c); fc=fcobj$fval
   }
   if(any(xvals==d)){
     d=xvals[which(xvals==d)]; fd=fvals[which(xvals==d)];
@@ -156,9 +158,8 @@ goldopt<- function(fn,interval,tol=1){
     key=1
   }else{
     cnt=cnt+1
-    fdobj<- fn(d); fd=fdobj$BIC
+    fdobj<- fn(d); fd=fdobj$fval
   }
-
 
   l = 1; # set counter for iterations
   cat("iter = ",l,"\n");arreter = 0
@@ -173,7 +174,7 @@ goldopt<- function(fn,interval,tol=1){
         key=1
       }else{
         cnt=cnt+1
-        fcobj<- fn(c); fc=fcobj$BIC
+        fcobj<- fn(c); fc=fcobj$fval
       }
 
     }else if(fc>fd){
@@ -186,7 +187,7 @@ goldopt<- function(fn,interval,tol=1){
         key=1
       }else{
         cnt=cnt+1
-        fdobj<- fn(d); fd=fdobj$BIC
+        fdobj<- fn(d); fd=fdobj$fval
       }
     }else{
       arreter=1
@@ -251,6 +252,8 @@ c_chmod<- function(Y, X, modclass="lm"){ #assign class of object
 #' @param ... additional parameters to be passed to \code{\link[stats]{lm}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height,X=women$weight,modclass="lm"))
 #' @export
 
 chmod.lm<- function(object,...){
@@ -267,11 +270,13 @@ chmod.lm<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height<=50,X=women$weight,modclass="logit"))
 #' @export
 
 chmod.logit<- function(object,...){
   fam = stats::binomial(link = "logit")
-  dat = data.frame(object$Y,object$Xmat); names(dat)[1]="Y"
+  dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
   stats::glm(object$Y~.,family = fam, data = dat,...)
 }
 
@@ -284,6 +289,8 @@ chmod.logit<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[quantreg]{rq}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height,X=women$weight,modclass="qreg"),tau=0.45)
 #' @export
 
 chmod.qreg<- function(object,...){
@@ -299,6 +306,8 @@ chmod.qreg<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height<=50,X=women$weight,modclass="probit"))
 #' @export
 
 chmod.probit<- function(object,...){
@@ -315,6 +324,8 @@ chmod.probit<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height,X=women$weight,modclass="gammainverse"))
 #' @export
 
 chmod.gammainverse<- function(object,...){
@@ -331,6 +342,8 @@ chmod.gammainverse<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height,X=women$weight,modclass="gammalog"))
 #' @export
 
 chmod.gammalog<- function(object,...){
@@ -347,6 +360,8 @@ chmod.gammalog<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height,X=women$weight,modclass="poissonlog"))
 #' @export
 
 chmod.poissonlog<- function(object,...){
@@ -363,6 +378,8 @@ chmod.poissonlog<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height,X=women$weight,modclass="poissonidentity"))
 #' @export
 
 chmod.poissonidentity<- function(object,...){
@@ -379,6 +396,8 @@ chmod.poissonidentity<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[stats]{glm}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height,X=women$weight,modclass="poissonsqrt"))
 #' @export
 
 chmod.poissonsqrt<- function(object,...){
@@ -396,11 +415,13 @@ chmod.poissonsqrt<- function(object,...){
 #' @param ... additional parameters to be passed to \code{\link[MASS]{glm.nb}}
 #'
 #' @return fitted model object
+#' @examples
+#' chmod(c_chmod(Y=women$height,X=women$weight,modclass="negbin"))
 #' @export
 
 chmod.negbin<- function(object,...){
   dat = data.frame(object$Y,object$X); names(dat)[1]="Y"
-  MASS::glm.nb(object$Y~.,data = dat,...,maxit = 75)
+  MASS::glm.nb(object$Y~.,data = dat,...)
 }
 
 #===================================================================================>
@@ -521,8 +542,9 @@ dcluspar<- function(k,vec){
 #' @param X design matrix (without intercept)
 #' @param kap maximum number of parameters to estimate in each active sequential step,
 #' as a fraction of the less of total number of observations n or number of covariates p.
+#' i.e. \eqn{min(n,p)}
 #' @param modclass a string denoting the desired the class of model. See \link{c_chmod} for details.
-#' @param tol level of tolerance for convergence; default \code{tol=1e-06}
+#' @param tol level of tolerance for convergence; default \code{tol=1e-6}
 #' @param reltol a logical for relative tolerance instead of level. Defaults at TRUE
 #' @param rndcov seed for randomising assignment of covariates to partitions; default \code{NULL}
 #' @param report number of iterations after which to report progress; default \code{NULL}
@@ -533,13 +555,18 @@ dcluspar<- function(k,vec){
 #' @return \code{dev}  increment in the objective function value at convergence
 #' @return \code{fval} objective function value at convergence
 #'
-#' @examples ##Not run:
+#' @examples
+#' set.seed(14) #Generate data
+#' N = 1000; (bets = rep(-2:2,4)); p = length(bets); X = matrix(rnorm(N*p),N,p)
+#' Y = cbind(1,X)%*%matrix(c(0.5,bets),ncol = 1)
+#' CCRls(Y,X,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=8)
 #' @export
 CCRls<- function(Y,X,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=NULL,...){
   p = ncol(X)
   n = nrow(X)
   bet_vec<- rep(NA,p) # vector to store parameters, excludes intercept
   asz = 1e-20
+  if(kap<(1/n)){stop(paste("kap must be at least 1/n =",I(1/n)))}
   slc<- floor(kap*min(c(n,p))) # maximum size of a local covariate partition
   lcls<- ceiling((1:p)/slc) # assign covariates to partitions
   nlcls<- max(lcls) #number of partitions of covariates
@@ -548,7 +575,6 @@ CCRls<- function(Y,X,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,repo
   # initialise parameters
   bet0<- 0 #initialise intercept
   for (j in 1:p) {
-    #coefs<- coef(ch.model(Y,X[,j],model = model,...))
     coefs<- stats::coef(chmod(object=c_chmod(Y, X[,j], modclass=modclass),...))
     bet_vec[j]<- coefs[2]
   }

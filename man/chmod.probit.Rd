@@ -17,3 +17,6 @@ fitted model object
 \description{
 A probit regression implementation for the "probit" class. It uses \code{\link[stats]{glm}}
 }
+\examples{
+chmod(c_chmod(Y=women$height<=50,X=women$weight,modclass="probit"))
+}

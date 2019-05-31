@@ -2,9 +2,9 @@
 % Please edit documentation in R/Functions.R
 \name{CCRls.coord}
 \alias{CCRls.coord}
-\title{Linear regression via coordinate descent with covariate clsutering}
+\title{Linear regression via coordinate descent with covariate clustering}
 \usage{
-CCRls.coord(Y, X, k, nC, ...)
+CCRls.coord(Y, X, k, nC = 1, ...)
 }
 \arguments{
 \item{Y}{vector of outcome variable}
@@ -18,18 +18,17 @@ CCRls.coord(Y, X, k, nC, ...)
 \item{...}{additional parameters to be passed to \link[stats]{lm}}
 }
 \value{
-\code{betas}  parameter estimates (intercept first),
+\code{mobj}  the low dimension \link[stats]{lm} regression  object
 
-\code{iter}  number of iterations,
-
-\code{dev}  increment in the objective function value at convergence
-
-\code{fval} objective function value at convergence
+\code{clus}  cluster assignments of covariates (excluding the first nC
+covariates - including the intercept 1)
 }
 \description{
-This function is a wrapper for \code{linrclus}. It returns clustered parameters with
-function values like residual sum of squares, and the criterion of choice (BIC, AIC)
+This function is a wrapper for \code{linrclus}. It requires less input.
 }
 \examples{
-##Not run:
+set.seed(14) #Generate data
+N = 1000; (bets = rep(-2:2,4)); p = length(bets); X = matrix(rnorm(N*p),N,p)
+Y = cbind(1,X)\%*\%matrix(c(0.5,bets),ncol = 1)
+CCRls.coord(Y,X,k=5,nC=1)
 }

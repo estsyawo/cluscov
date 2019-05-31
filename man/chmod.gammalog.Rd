@@ -17,3 +17,6 @@ fitted model object
 \description{
 A gamma regression implementation for the "gammalog" class. It uses \code{\link[stats]{glm}}
 }
+\examples{
+chmod(c_chmod(Y=women$height,X=women$weight,modclass="gammalog"))
+}

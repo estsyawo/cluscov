@@ -17,3 +17,6 @@ fitted model object
 \description{
 A linear regression implementation for the "lmcd" class. It uses \code{\link[stats]{lm}}
 }
+\examples{
+chmod(c_chmod(Y=women$height,X=women$weight,modclass="lm"))
+}

@@ -13,11 +13,12 @@ CCRls(Y, X, kap = 0.1, modclass = "lm", tol = 1e-06, reltol = TRUE,
 \item{X}{design matrix (without intercept)}
 
 \item{kap}{maximum number of parameters to estimate in each active sequential step,
-as a fraction of the less of total number of observations n or number of covariates p.}
+as a fraction of the less of total number of observations n or number of covariates p.
+i.e. \eqn{min(n,p)}}
 
 \item{modclass}{a string denoting the desired the class of model. See \link{c_chmod} for details.}
 
-\item{tol}{level of tolerance for convergence; default \code{tol=1e-06}}
+\item{tol}{level of tolerance for convergence; default \code{tol=1e-6}}
 
 \item{reltol}{a logical for relative tolerance instead of level. Defaults at TRUE}
 
@@ -41,5 +42,8 @@ as a fraction of the less of total number of observations n or number of covaria
 See \code{c_chmod()} for the list of models supported.
 }
 \examples{
-##Not run:
+set.seed(14) #Generate data
+N = 1000; (bets = rep(-2:2,4)); p = length(bets); X = matrix(rnorm(N*p),N,p)
+Y = cbind(1,X)\%*\%matrix(c(0.5,bets),ncol = 1)
+CCRls(Y,X,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=8)
 }

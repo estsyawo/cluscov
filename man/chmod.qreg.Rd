@@ -17,3 +17,6 @@ fitted model object
 \description{
 A quantile regression implementation for the "qreg" class. It uses \code{\link[quantreg]{rq}}
 }
+\examples{
+chmod(c_chmod(Y=women$height,X=women$weight,modclass="qreg"),tau=0.45)
+}

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Linear regression via coordinate descent with covariate clsutering — CCRls.coord • cluscov</title>
+<title>Linear regression via coordinate descent with covariate clustering — CCRls.coord • cluscov</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,10 +30,9 @@
 
 
 
-<meta property="og:title" content="Linear regression via coordinate descent with covariate clsutering — CCRls.coord" />
+<meta property="og:title" content="Linear regression via coordinate descent with covariate clustering — CCRls.coord" />
 
-<meta property="og:description" content="This function is a wrapper for linrclus. It returns clustered parameters with
-function values like residual sum of squares, and the criterion of choice (BIC, AIC)" />
+<meta property="og:description" content="This function is a wrapper for linrclus. It requires less input." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -95,19 +94,18 @@ function values like residual sum of squares, and the criterion of choice (BIC, 
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Linear regression via coordinate descent with covariate clsutering</h1>
+    <h1>Linear regression via coordinate descent with covariate clustering</h1>
     
     <div class="hidden name"><code>CCRls.coord.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>This function is a wrapper for <code>linrclus</code>. It returns clustered parameters with
-function values like residual sum of squares, and the criterion of choice (BIC, AIC)</p>
+    <p>This function is a wrapper for <code>linrclus</code>. It requires less input.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>CCRls.coord</span>(<span class='no'>Y</span>, <span class='no'>X</span>, <span class='no'>k</span>, <span class='no'>nC</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>CCRls.coord</span>(<span class='no'>Y</span>, <span class='no'>X</span>, <span class='no'>k</span>, <span class='kw'>nC</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -136,15 +134,32 @@ function values like residual sum of squares, and the criterion of choice (BIC, 
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p><code>betas</code>  parameter estimates (intercept first),</p>
-<p><code>iter</code>  number of iterations,</p>
-<p><code>dev</code>  increment in the objective function value at convergence</p>
-<p><code>fval</code> objective function value at convergence</p>
+    <p><code>mobj</code>  the low dimension <a href='https://www.rdocumentation.org/packages/stats/topics/lm'>lm</a> regression  object</p>
+<p><code>clus</code>  cluster assignments of covariates (excluding the first nC
+covariates - including the intercept 1)</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>##Not run:
-</div></pre>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>14</span>) <span class='co'>#Generate data</span>
+<span class='no'>N</span> <span class='kw'>=</span> <span class='fl'>1000</span>; (<span class='no'>bets</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/rep'>rep</a></span>(-<span class='fl'>2</span>:<span class='fl'>2</span>,<span class='fl'>4</span>)); <span class='no'>p</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/length'>length</a></span>(<span class='no'>bets</span>); <span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>matrix</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/Normal'>rnorm</a></span>(<span class='no'>N</span>*<span class='no'>p</span>),<span class='no'>N</span>,<span class='no'>p</span>)</div><div class='output co'>#&gt;  [1] -2 -1  0  1  2 -2 -1  0  1  2 -2 -1  0  1  2 -2 -1  0  1  2</div><div class='input'><span class='no'>Y</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/cbind'>cbind</a></span>(<span class='fl'>1</span>,<span class='no'>X</span>)<span class='kw'>%*%</span><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>matrix</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>0.5</span>,<span class='no'>bets</span>),<span class='kw'>ncol</span> <span class='kw'>=</span> <span class='fl'>1</span>)
+<span class='fu'>CCRls.coord</span>(<span class='no'>Y</span>,<span class='no'>X</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>5</span>,<span class='kw'>nC</span><span class='kw'>=</span><span class='fl'>1</span>)</div><div class='output co'>#&gt; Inner iter = 1, RSS = 660.88739, and reldev = 0.30341 
+#&gt; Inner iter = 2, RSS = 660.88739, and reldev = 0.00000 </div><div class='output co'>#&gt; $mobj
+#&gt; 
+#&gt; Call:
+#&gt; stats::lm(formula = Y ~ as.matrix(cbind(Xnc, X1)[, -1]))
+#&gt; 
+#&gt; Coefficients:
+#&gt;                     (Intercept)  as.matrix(cbind(Xnc, X1)[, -1])  
+#&gt;                        5.00e-01                        -2.00e+00  
+#&gt; as.matrix(cbind(Xnc, X1)[, -1])  as.matrix(cbind(Xnc, X1)[, -1])  
+#&gt;                       -1.00e+00                         4.01e-16  
+#&gt; as.matrix(cbind(Xnc, X1)[, -1])  as.matrix(cbind(Xnc, X1)[, -1])  
+#&gt;                        1.00e+00                         2.00e+00  
+#&gt; 
+#&gt; 
+#&gt; $clus
+#&gt;  [1] 1 2 3 4 5 1 2 3 4 5 1 2 3 4 5 1 2 3 4 5
+#&gt; </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
@@ -161,7 +176,7 @@ function values like residual sum of squares, and the criterion of choice (BIC, 
 
       <footer>
       <div class="copyright">
-  <p>Developed by Emmanuel S. Tsyawo.</p>
+  <p>Developed by Emmanuel S Tsyawo.</p>
 </div>
 
 <div class="pkgdown">

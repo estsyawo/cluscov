@@ -7,7 +7,8 @@
 goldopt(fn, interval, tol = 1)
 }
 \arguments{
-\item{fn}{function to be minimised}
+\item{fn}{function to be minimised. \strong{fn} should return a list, with \strong{fval}
+as the function value.}
 
 \item{interval}{a vector of length two containing the minimum and maximum interger
 values within which to search for the minimiser.}
@@ -31,5 +32,10 @@ key a logical for warning if \code{fobj} may not correspond to \code{k}
 This function conducts an integer golden search minimisation of a univariate function.
 }
 \examples{
-## Not run:...
+set.seed(14) #Generate data
+N = 1000; (bets = rep(-2:2,4)); p = length(bets); X = matrix(rnorm(N*p),N,p)
+Y = cbind(1,X)\%*\%matrix(c(0.5,bets),ncol = 1)
+fn=function(k){du=CCRls.coord(Y,X,k=k,nC=1)
+return(list(fval=BIC(du$mobj),obj=du))}
+goldopt(fn=fn,interval=c(2,7),tol=1)
 }

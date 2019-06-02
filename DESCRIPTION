@@ -1,7 +1,7 @@
 Package: cluscov
 Type: Package
 Title: Clustered Covariate Regression
-Version: 0.1.0
+Version: 1.1.0
 Date: 2019-05-31
 Author: Emmanuel S Tsyawo  [aut, cre], Abdul-Nasah Soale [aut]
 Maintainer: Emmanuel S Tsyawo <estsyawo@temple.edu>

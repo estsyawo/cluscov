@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Sequential CCR — CCRls • cluscov</title>
+<title>Sequential CCR with k clusters — CCRseqk • cluscov</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,10 +30,10 @@
 
 
 
-<meta property="og:title" content="Sequential CCR — CCRls" />
+<meta property="og:title" content="Sequential CCR with k clusters — CCRseqk" />
 
-<meta property="og:description" content="CCRls runs regressions with potentially more covariates than observations.
-See c_chmod() for the list of models supported." />
+<meta property="og:description" content="CCRseqk runs regressions with potentially more covariates than observations with
+k clusters. See c_chmod() for the list of models supported." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -98,20 +98,20 @@ See c_chmod() for the list of models supported." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Sequential CCR</h1>
+    <h1>Sequential CCR with k clusters</h1>
     
-    <div class="hidden name"><code>CCRls.Rd</code></div>
+    <div class="hidden name"><code>CCRseqk.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p><code>CCRls</code> runs regressions with potentially more covariates than observations.
-See <code><a href='c_chmod.html'>c_chmod()</a></code> for the list of models supported.</p>
+    <p><code>CCRseqk</code> runs regressions with potentially more covariates than observations with
+<code>k</code> clusters. See <code><a href='c_chmod.html'>c_chmod()</a></code> for the list of models supported.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>CCRls</span>(<span class='no'>Y</span>, <span class='no'>X</span>, <span class='kw'>kap</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>modclass</span> <span class='kw'>=</span> <span class='st'>"lm"</span>, <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>1e-06</span>, <span class='kw'>reltol</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>rndcov</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>report</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>CCRseqk</span>(<span class='no'>Y</span>, <span class='no'>X</span>, <span class='no'>k</span>, <span class='kw'>nC</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>kap</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>modclass</span> <span class='kw'>=</span> <span class='st'>"lm"</span>, <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>1e-06</span>,
+  <span class='kw'>reltol</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>rndcov</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>report</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -123,6 +123,14 @@ See <code><a href='c_chmod.html'>c_chmod()</a></code> for the list of models sup
     <tr>
       <th>X</th>
       <td><p>design matrix (without intercept)</p></td>
+    </tr>
+    <tr>
+      <th>k</th>
+      <td><p>number of clusters</p></td>
+    </tr>
+    <tr>
+      <th>nC</th>
+      <td><p>first <code>nC-1</code> columns in <code>X</code> not to cluster</p></td>
     </tr>
     <tr>
       <th>kap</th>
@@ -158,52 +166,33 @@ i.e. \(min(n,p)\)</p></td>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p><code>betas</code>  parameter estimates (intercept first),</p>
-<p><code>iter</code>  number of iterations,</p>
-<p><code>dev</code>  increment in the objective function value at convergence</p>
-<p><code>fval</code> objective function value at convergence</p>
+    <p>a list of objects</p><ul>
+<li><p>mobj low dimensional model object of class lm, glm, or rq (depending on <code>modclass</code>)</p></li>
+<li><p>clus cluster assignments of covariates</p></li>
+<li><p>iter number of iterations</p></li>
+<li><p>dev decrease in the function value at convergence</p></li>
+</ul>
+
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>14</span>) <span class='co'>#Generate data</span>
-<span class='no'>N</span> <span class='kw'>=</span> <span class='fl'>1000</span>; (<span class='no'>bets</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/rep'>rep</a></span>(-<span class='fl'>2</span>:<span class='fl'>2</span>,<span class='fl'>4</span>)); <span class='no'>p</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/length'>length</a></span>(<span class='no'>bets</span>); <span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>matrix</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/Normal'>rnorm</a></span>(<span class='no'>N</span>*<span class='no'>p</span>),<span class='no'>N</span>,<span class='no'>p</span>)</div><div class='output co'>#&gt;  [1] -2 -1  0  1  2 -2 -1  0  1  2 -2 -1  0  1  2 -2 -1  0  1  2</div><div class='input'><span class='no'>Y</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/cbind'>cbind</a></span>(<span class='fl'>1</span>,<span class='no'>X</span>)<span class='kw'>%*%</span><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>matrix</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>0.5</span>,<span class='no'>bets</span>),<span class='kw'>ncol</span> <span class='kw'>=</span> <span class='fl'>1</span>)
-<span class='fu'>CCRls</span>(<span class='no'>Y</span>,<span class='no'>X</span>,<span class='kw'>kap</span><span class='kw'>=</span><span class='fl'>0.1</span>,<span class='kw'>modclass</span><span class='kw'>=</span><span class='st'>"lm"</span>,<span class='kw'>tol</span><span class='kw'>=</span><span class='fl'>1e-6</span>,<span class='kw'>reltol</span><span class='kw'>=</span><span class='fl'>TRUE</span>,<span class='kw'>rndcov</span><span class='kw'>=</span><span class='kw'>NULL</span>,<span class='kw'>report</span><span class='kw'>=</span><span class='fl'>8</span>)</div><div class='output co'>#&gt; Iter = 8 fval = 171.6381 
-#&gt; Iter = 16 fval = -2021.848 
-#&gt; Iter = 24 fval = -4238.609 
-#&gt; Iter = 32 fval = -6142.191 
-#&gt; Iter = 40 fval = -7774.868 
-#&gt; Iter = 48 fval = -9587.035 
-#&gt; Iter = 56 fval = -11390.67 
-#&gt; Iter = 64 fval = -13005.29 
-#&gt; Iter = 72 fval = -14775.72 
-#&gt; Iter = 80 fval = -16533.27 
-#&gt; Iter = 88 fval = -18396.9 
-#&gt; Iter = 96 fval = -20283.21 
-#&gt; Iter = 104 fval = -21899.35 
-#&gt; Iter = 112 fval = -23697.19 
-#&gt; Iter = 120 fval = -25467.95 
-#&gt; Iter = 128 fval = -27271.29 
-#&gt; Iter = 136 fval = -29144.27 </div><div class='output co'>#&gt; $betas
-#&gt;   (Intercept)                                                         
-#&gt;  5.000000e-01 -2.000000e+00 -1.000000e+00  9.545726e-15  1.000000e+00 
-#&gt;                                                                       
-#&gt;  2.000000e+00 -2.000000e+00 -1.000000e+00 -2.844662e-15  1.000000e+00 
-#&gt;                                                                       
-#&gt;  2.000000e+00 -2.000000e+00 -1.000000e+00 -5.262962e-16  1.000000e+00 
-#&gt;                                                                       
-#&gt;  2.000000e+00 -2.000000e+00 -1.000000e+00 -1.949927e-15  1.000000e+00 
-#&gt;               
-#&gt;  2.000000e+00 
-#&gt; 
-#&gt; $iter
-#&gt; [1] 139
-#&gt; 
-#&gt; $dev
-#&gt; 'log Lik.' -0.00236367 (df=5)
-#&gt; 
-#&gt; $fval
-#&gt; 'log Lik.' -29814.17 (df=5)
-#&gt; </div></pre>
+<span class='no'>N</span> <span class='kw'>=</span> <span class='fl'>1000</span>; (<span class='no'>bets</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/rep'>rep</a></span>(-<span class='fl'>2</span>:<span class='fl'>2</span>,<span class='fl'>4</span>)/<span class='fl'>2</span>); <span class='no'>p</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/length'>length</a></span>(<span class='no'>bets</span>); <span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>matrix</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/Normal'>rnorm</a></span>(<span class='no'>N</span>*<span class='no'>p</span>),<span class='no'>N</span>,<span class='no'>p</span>)</div><div class='output co'>#&gt;  [1] -1.0 -0.5  0.0  0.5  1.0 -1.0 -0.5  0.0  0.5  1.0 -1.0 -0.5  0.0  0.5  1.0
+#&gt; [16] -1.0 -0.5  0.0  0.5  1.0</div><div class='input'><span class='no'>Y</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/cbind'>cbind</a></span>(<span class='fl'>1</span>,<span class='no'>X</span>)<span class='kw'>%*%</span><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>matrix</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>0.5</span>,<span class='no'>bets</span>),<span class='kw'>ncol</span> <span class='kw'>=</span> <span class='fl'>1</span>); <span class='no'>nC</span><span class='kw'>=</span><span class='fl'>1</span>
+<span class='no'>zg</span><span class='kw'>=</span><span class='fu'>CCRseqk</span>(<span class='no'>Y</span>,<span class='no'>X</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>5</span>,<span class='kw'>nC</span><span class='kw'>=</span><span class='no'>nC</span>,<span class='kw'>kap</span><span class='kw'>=</span><span class='fl'>0.1</span>,<span class='kw'>modclass</span><span class='kw'>=</span><span class='st'>"lm"</span>,<span class='kw'>tol</span><span class='kw'>=</span><span class='fl'>1e-6</span>,<span class='kw'>reltol</span><span class='kw'>=</span><span class='fl'>TRUE</span>,<span class='kw'>rndcov</span><span class='kw'>=</span><span class='kw'>NULL</span>,<span class='kw'>report</span><span class='kw'>=</span><span class='fl'>8</span>)
+(<span class='no'>del</span><span class='kw'>=</span><span class='no'>zg</span>$<span class='no'>mobj</span>$<span class='no'>coefficients</span>) <span class='co'># delta</span></div><div class='output co'>#&gt;   (Intercept)            X1            X2            X3            X4 
+#&gt;  5.000000e-01 -1.000000e+00 -5.000000e-01  1.944761e-16  5.000000e-01 
+#&gt;            X5 
+#&gt;  1.000000e+00 </div><div class='input'>(<span class='no'>bets</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='no'>del</span>[<span class='fl'>1</span>:<span class='no'>nC</span>],(<span class='no'>del</span>[-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>1</span>:<span class='no'>nC</span>)])[<span class='no'>zg</span>$<span class='no'>clus</span>])) <span class='co'>#construct beta</span></div><div class='output co'>#&gt;   (Intercept)            X1            X2            X3            X4 
+#&gt;  5.000000e-01 -1.000000e+00 -5.000000e-01  1.944761e-16  5.000000e-01 
+#&gt;            X5            X1            X2            X3            X4 
+#&gt;  1.000000e+00 -1.000000e+00 -5.000000e-01  1.944761e-16  5.000000e-01 
+#&gt;            X5            X1            X2            X3            X4 
+#&gt;  1.000000e+00 -1.000000e+00 -5.000000e-01  1.944761e-16  5.000000e-01 
+#&gt;            X5            X1            X2            X3            X4 
+#&gt;  1.000000e+00 -1.000000e+00 -5.000000e-01  1.944761e-16  5.000000e-01 
+#&gt;            X5 
+#&gt;  1.000000e+00 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

@@ -615,6 +615,111 @@ CCRls<- function(Y,X,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,repo
 }
 
 #=============================================================================================>
+#' Sequential CCR with k clusters
+#'
+#' \code{CCRseqk} runs regressions with potentially more covariates than observations with
+#' \code{k} clusters. See \code{c_chmod()} for the list of models supported.
+#'
+#' @param Y vector of dependent variable Y
+#' @param X design matrix (without intercept)
+#' @param k number of clusters
+#' @param nC first \code{nC-1} columns in \code{X} not to cluster
+#' @param kap maximum number of parameters to estimate in each active sequential step,
+#' as a fraction of the less of total number of observations n or number of covariates p.
+#' i.e. \eqn{min(n,p)}
+#' @param modclass a string denoting the desired the class of model. See \link{c_chmod} for details.
+#' @param tol level of tolerance for convergence; default \code{tol=1e-6}
+#' @param reltol a logical for relative tolerance instead of level. Defaults at TRUE
+#' @param rndcov seed for randomising assignment of covariates to partitions; default \code{NULL}
+#' @param report number of iterations after which to report progress; default \code{NULL}
+#' @param ... additional arguments to be passed to the model
+#'
+#' @return a list of objects
+#' \itemize{
+#' \item mobj low dimensional model object of class lm, glm, or rq (depending on \code{modclass})
+#' \item clus cluster assignments of covariates
+#' \item iter number of iterations
+#' \item dev decrease in the function value at convergence
+#' }
+#'
+#' @examples
+#' set.seed(14) #Generate data
+#' N = 1000; (bets = rep(-2:2,4)/2); p = length(bets); X = matrix(rnorm(N*p),N,p)
+#' Y = cbind(1,X)%*%matrix(c(0.5,bets),ncol = 1); nC=1
+#' zg=CCRseqk(Y,X,k=5,nC=nC,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=8)
+#' (del=zg$mobj$coefficients) # delta
+#' (bets = c(del[1:nC],(del[-c(1:nC)])[zg$clus])) #construct beta
+#' @export
+CCRseqk<- function(Y,X,k,nC=1,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,report=NULL,...){
+  p = ncol(X)
+  n = nrow(X)
+  bet_vec<- rep(NA,p) # vector to store parameters, excludes intercept
+  asz = 1e-20
+  if(kap<(1/n)){stop(paste("kap must be at least 1/n =",I(1/n)))}
+  slc<- max(floor(kap*min(c(n,p))),1) # maximum size of a local covariate partition
+  lcls<- ceiling((1:p)/slc) # assign covariates to partitions
+  nlcls<- max(lcls) #number of partitions of covariates
+  if(!is.null(rndcov)){set.seed(rndcov);lcls<- sample(lcls,p)} #randomise partition assignment?
+
+  # initialise parameters
+  for (j in nC:p) {
+    coefs<- stats::coef(chmod(object=c_chmod(Y, X[,j], modclass=modclass),...))
+    bet_vec[j]<- coefs[2]
+  }
+
+  X1 <- matrix(NA,n,k) #initialise X for low dimension regression
+  clus=dcluspar(k,bet_vec) #assign to clusters
+  #uniclus<- unique(clus)
+  if(nC==1){
+    Xnc=NULL; Xc = X
+  }else if(nC>1){
+    Xnc=X[,(1:(nC-1))]; Xc = X[,-c(1:(nC-1))]
+  }else{stop(paste("nC must be >= 1. nC = ",nC))}
+
+  for(j in 1: k){ X1[,j] <- apply(as.matrix(Xc[,which(clus == j)]),1,sum)}
+  obj0 = chmod(object=c_chmod(Y, as.matrix(cbind(Xnc,X1)), modclass=modclass),...)
+  val0<- -stats::logLik(obj0); l<- 0; #val1<- 0; dev=(val0-val1)
+  dev = Inf
+
+  # begin while loop
+  while((dev>tol)){
+    if(l>0){ #update values
+      val0<- val1; obj0<- obj1;
+      coefs<- stats::coef(obj1)
+      bet_vec = coefs[clus]
+      bet_vec0 = bet_vec; clus0 = clus
+    }
+    # identify partition
+    l<- l + 1; IND<- l - (ceiling(l/nlcls)-1)*nlcls;
+
+    IDls<- which(lcls==IND); nIDls<- length(IDls)
+    # construct (local) design matrix
+    XB_ = Xc[,-IDls]%*%matrix(bet_vec[-IDls],ncol = 1)
+    X0 = Xc[,IDls]
+    XX = data.frame(cbind(Xnc,X0,XB_))
+    objC = chmod(object=c_chmod(Y, as.matrix(cbind(XX)), modclass=modclass),...)
+    coefs = stats::coef(objC)
+    bet_vec[IDls]<- coefs[nC+(1:nIDls)]
+    bet_vec[-IDls]<- utils::tail(coefs,n=1)*bet_vec[-IDls] #non-local parameter updating
+    #***************
+    clus=dcluspar(k,bet_vec) #assign to clusters
+    for(j in 1: k){ X1[,j] <- apply(as.matrix(Xc[,which(clus == j)]),1,sum)}
+    obj1 = chmod(object=c_chmod(Y, as.matrix(cbind(Xnc,X1)), modclass=modclass),...)
+    #***************
+    val1<- -stats::logLik(obj1)
+    if(!is.null(report)){if(l%%report==0){ cat("Iter =",l,"fval =",val1,"\n")}}
+    if(reltol){dev=(val0-val1)/(asz+abs(val0))}else{dev=(val0-val1)}
+  } #end while loop
+  if(l>1){
+  rvals=list(mobj=obj0,clus = clus0, iter=l,dev=dev)
+  }else{
+    rvals=list(mobj=obj0,clus = clus, iter=l,dev=dev)
+  }
+  return(rvals)
+}
+
+
+#=============================================================================================>
 #' Golden Section Search Algorithm
 #'
 #' Minimising a continuous univariate function using the golden section search algorithm.

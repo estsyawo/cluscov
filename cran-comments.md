@@ -8,7 +8,7 @@
 * Local:        0 ERRORS | 0 WARNINGS | 0 NOTES
   
 * Win-builder:  0 ERRORs | 0 WARNINGS | 1 NOTE
-- checking CRAN incoming feasibility ... NOTE Maintainer: 'Emmanuel S Tsyawo <estsyawo@temple.edu>': Maintainer and author's full name
+- Possibly mis-spelled words in DESCRIPTION: Soale (11:5) Tsyawo (11:15). Authors' last names
 
 
 ## Downstream dependencies

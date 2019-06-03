@@ -163,7 +163,7 @@ goldopt<- function(fn,interval,tol=1){
   }
 
   l = 1; # set counter for iterations
-  cat("iter = ",l,"\n");arreter = 0
+  message("iter = ",l,"\n");arreter = 0
   while(abs(c-d)>tol & arreter==0){# while c d
     if(fc<fd){
       b=d; fb=fd; fbobj=fdobj
@@ -193,7 +193,7 @@ goldopt<- function(fn,interval,tol=1){
     }else{
       arreter=1
     }
-    l=l+1; cat("iter = ",l,"\n")
+    l=l+1; message("iter = ",l,"\n")
   }
 
   optx=ifelse(fc>fd,d,c);
@@ -454,7 +454,7 @@ chmod.negbin<- function(object,...){
 #' @param  unicons  a logical indicating whether to include unit-specific constant term
 
 #' @return  Y  vector of dependent variables
-#' @return  X  a block matrix of spillover matrix (TN x N^2)
+#' @return  X  a block matrix of spillover matrix (\eqn{TN} x \eqn{N^2} )
 #' @return  Wm  a matrix corresponding to covariate Wi
 #' @return  Wf  a matrix of dummies corresponding to factors
 #' @export
@@ -472,7 +472,7 @@ netdat<- function(datf,Y,X,Wi,W=NULL,panvar,tvar,factors,scaling=TRUE,unicons=TR
   if(scaling){
     fn<- function(x) {stats::sd(stats::na.omit(x))*sqrt(length(which(!is.na(x)))/length(x))}
     vX<- apply(Xj,2,fn);
-    if(any(vX<(10^-6))){cat("some units lack variation in x. consider removing them.")}
+    if(any(vX<(10^-6))){message("some units lack variation in x. consider removing them.")}
 
 
     if(unicons){
@@ -492,7 +492,7 @@ netdat<- function(datf,Y,X,Wi,W=NULL,panvar,tvar,factors,scaling=TRUE,unicons=TR
 
   if(scaling){
     vWm = apply(dat[Wi],2,fn);
-    if(any(vWm<(10^-6))){cat("some units lack variation in covariates. consider removing them.")}
+    if(any(vWm<(10^-6))){message("some units lack variation in covariates. consider removing them.")}
     Wm = dat[Wi]/vWm
   }else{
     Wm = dat[Wi]
@@ -607,7 +607,7 @@ CCRls<- function(Y,X,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=NULL,repo
     XX = data.frame(Xl,XB_)
     obj1 = chmod(object=c_chmod(Y, as.matrix(XX), modclass=modclass),...)
     val1<- -stats::logLik(obj1)
-    if(!is.null(report)){if(l%%report==0){ cat("Iter =",l,"fval =",val1,"\n")}}
+    if(!is.null(report)){if(l%%report==0){ message("Iter =",l,"fval =",val1,"\n")}}
     if(reltol){dev=(val0-val1)/(asz+abs(val0))}else{dev=(val0-val1)}
     if(l==1){dev=1} # asz in denominator to avoid dividing by zero
   }
@@ -707,7 +707,7 @@ CCRseqk<- function(Y,X,k,nC=1,kap=0.1,modclass="lm",tol=1e-6,reltol=TRUE,rndcov=
     obj1 = chmod(object=c_chmod(Y, as.matrix(cbind(Xnc,X1)), modclass=modclass),...)
     #***************
     val1<- -stats::logLik(obj1)
-    if(!is.null(report)){if(l%%report==0){ cat("Iter =",l,"fval =",val1,"\n")}}
+    if(!is.null(report)){if(l%%report==0){ message("Iter =",l,"fval =",val1,"\n")}}
     if(reltol){dev=(val0-val1)/(asz+abs(val0))}else{dev=(val0-val1)}
   } #end while loop
   if(l>1){
@@ -764,7 +764,7 @@ goldensearch<- function(fn,interval,tol=1){
 
 
   l = 1; # set counter for iterations
-  cat("iter = ",l,"\n");arreter = 0
+  message("iter = ",l,"\n");arreter = 0
   while(abs(c-d)>tol & arreter==0){# while c d
     if(fc<fd){
       b=d; fb=fd;d=c;fd=fc;
@@ -788,7 +788,7 @@ goldensearch<- function(fn,interval,tol=1){
     }else{
       arreter=1
     }
-    l=l+1; cat("iter = ",l,"\n")
+    l=l+1; message("iter = ",l,"\n")
   }
 
   optx=ifelse(fc>fd,d,c)

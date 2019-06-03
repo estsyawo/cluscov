@@ -35,7 +35,7 @@ in the data frame datf}
 \value{
 Y  vector of dependent variables
 
-X  a block matrix of spillover matrix (TN x N^2)
+X  a block matrix of spillover matrix (\eqn{TN} x \eqn{N^2} )
 
 Wm  a matrix corresponding to covariate Wi
 
